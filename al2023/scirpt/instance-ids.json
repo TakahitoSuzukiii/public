@@ -1,0 +1,16 @@
+{
+  "Instances": [
+    {
+        "Name": "test-al2023-alpha-bastion-linux-al2",
+        "InstanceId": "i-0ed8be62b1364f3a5"
+    },
+    {
+        "Name": "test-al2023-alpha-bastion-linux-al2023",
+        "InstanceId": "i-085fd15139ae40837"
+    },
+    {
+        "Name": "test-al2023-alpha-bastion-windows-2019",
+        "InstanceId": "i-04e25530a84567fa6"
+    }
+  ]
+}
