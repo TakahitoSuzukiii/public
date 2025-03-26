@@ -1,0 +1,161 @@
+@startuml sample-large
+!define AWSPuml https://raw.githubusercontent.com/awslabs/aws-icons-for-plantuml/v14.0/dist
+!include AWSPuml/AWSCommon.puml
+!include AWSPuml/General/Users.puml
+!include AWSPuml/Groups/AWSCloud.puml
+!include AWSPuml/Groups/Generic.puml
+!include AWSPuml/Groups/GenericAlt.puml
+!include AWSPuml/NetworkingContentDelivery/CloudFront.puml
+!include AWSPuml/Database/DynamoDB.puml
+!include AWSPuml/SecurityIdentityCompliance/Cognito.puml
+!include AWSPuml/Compute/LambdaLambdaFunction.puml
+!include AWSPuml/Storage/SimpleStorageService.puml
+!include AWSPuml/ApplicationIntegration/APIGateway.puml
+!include AWSPuml/ApplicationIntegration/AppSync.puml
+!include AWSPuml/FrontEndWebMobile/Amplify.puml
+!include AWSPuml/Analytics/Athena.puml
+!include AWSPuml/CloudFinancialManagement/CostandUsageReport.puml
+!include AWSPuml/DeveloperTools/ToolsandSDKs.puml
+!include AWSPuml/ManagementGovernance/Config.puml
+!include AWSPuml/Groups/VPC.puml
+!include AWSPuml/Groups/PrivateSubnet.puml
+!include AWSPuml/Database/Neptune.puml
+!include AWSPuml/Analytics/OpenSearchService.puml
+!include AWSPuml/Containers/ElasticContainerService.puml
+!include AWSPuml/Containers/Fargate.puml
+!include AWSPuml/Containers/ElasticContainerRegistry.puml
+!include AWSPuml/DeveloperTools/CodePipeline.puml
+!include AWSPuml/DeveloperTools/CodeBuild.puml
+!include AWSPuml/Containers/ElasticContainerRegistryImage.puml
+!include AWSPuml/AWSSimplified.puml
+
+top to bottom direction
+title AWSでのワークロード検出
+
+skinparam shadowing false
+hide stereotype
+skinparam linetype ortho
+skinparam rectangle {
+    BackgroundColor AWS_BG_COLOR
+    BorderColor transparent
+}
+
+!procedure $stepnum($number) 
+<back:royalblue><color:white><b> $number </b></color></back>
+!endprocedure
+
+rectangle "$UsersIMG()\nユーザ" as users
+AWSCloudGroup(cloud){
+  rectangle "<font color=white>right" as right {
+    GenericGroup(components4,コストコンポーネント){
+      rectangle "$LambdaLambdaFunctionIMG()\nAWS Lambda\nCost関数" as lambda2
+      rectangle "$AthenaIMG()\nAmazon Athena" as athena
+      rectangle "$SimpleStorageServiceIMG()\nAmazon S3バケット\nCURバケット" as s33
+      rectangle "$CostandUsageReportIMG()\nAWSのコストと使用状況\nレポート" as cost
+      rectangle "$SimpleStorageServiceIMG()\nAmazon S3バケット\nAthenaResultsBucket" as s34
+    }
+    VPCGroup(vpc,VPC){
+      PrivateSubnetGroup(subnet,プライベートサブネット){
+        GenericGroup(components5,データコンポーネント) #Transparent {
+          rectangle "$LambdaLambdaFunctionIMG()\nAWS Lambda\nGremlin関数" as lambda3 #Transparent
+          rectangle "$NeptuneIMG()\nAmazon Neptune" as neptune #Transparent
+          rectangle "$LambdaLambdaFunctionIMG()\nAWS Lambda\nSearch関数" as lambda4 #Transparent
+          rectangle "$OpenSearchServiceIMG()\nAmazon OpenSearch Service\n(Amazon Elasticsearch Service\nの後継サービス)" as opensearch #Transparent
+        }
+        GenericGroup(components6,検出コンポーネント) #Transparent {
+          rectangle "$ElasticContainerServiceIMG()\nAmazon Elastic\nContainer Service" as ecs #Transparent
+          rectangle "$FargateIMG()\nAWS Fargate" as fargate #Transparent
+          rectangle "$ElasticContainerRegistryIMG()\nAmazon Elastic\nContainer Registry" as ecr #Transparent
+        }
+      }
+    }
+    GenericGroup(components7,イメージデプロイコンポーネント) #Transparent {
+      rectangle "$SimpleStorageServiceIMG()\nAmazon S3バケット\nDiscoveryBucket" as s35
+      rectangle "$CodePipelineIMG()\nAWS CodePipeline" as codepipeline
+      rectangle "$CodeBuildIMG()\nAWS CodeBuild" as codebuild
+      rectangle "$ElasticContainerRegistryImageIMG()\nコンテナ\nイメージ" as container
+    }
+  }
+  rectangle "<font color=white>left" as left {
+    GenericGroup(components1,ウェブUIコンポーネント){
+      rectangle "$DynamoDBIMG()\nAmazon DynamoDB\nSettingsテーブル" as dynamodb
+      rectangle "$CognitoIMG()\nAmazon Cognito" as cognito
+      rectangle "$SimpleStorageServiceIMG()\nAmazon S3バケット\nWebUIBucket" as s31
+      rectangle "$LambdaLambdaFunctionIMG()\nAWS Lambda\nSettings関数" as lambda1
+      rectangle "$CloudFrontIMG()\nAmazon CloudFront" as cloudfront
+      GenericAltGroup(clgroup,クライアントAPI){
+        rectangle "$APIGatewayIMG()\nAmazon API\nGateway" as apigateway1 #Transparent
+        rectangle "$AppSyncIMG()\nAWS AppSync" as appsync #Transparent
+      }
+    }
+    rectangle "<font color=white>left_down" as left_down {
+      rectangle "<font color=white>develop" as components3 {
+        rectangle "$APIGatewayIMG()\nAmazon API Gateway\nServiceGremlin API" as apigateway2
+        rectangle "$ToolsandSDKsIMG()\nAWS SDK" as sdk
+        rectangle "$ConfigIMG()\nAWS Config" as config
+      }
+      GenericGroup(components2,ストレージ管理コンポーネント){
+        rectangle "$AmplifyIMG()\nAWS Amplify" as amplify
+        rectangle "$SimpleStorageServiceIMG()\nAmazon S3バケット\nAmplifyStorageBucket" as s32
+      }
+    }
+  }
+}
+
+'# オブジェクト同士の接続
+vpc-[hidden]r-components7
+components4-[hidden]d-vpc
+components5-[hidden]d-components6
+
+'# ユーザアクセス
+cloudfront<-l-users: $stepnum("1")
+
+'# ウェブUIコンポーネント
+lambda1-l->dynamodb: $stepnum("6")
+cloudfront-r->s31
+dynamodb-[hidden]d-cognito
+s31-u->cognito: $stepnum("2")
+s31-r->clgroup
+clgroup--u->lambda1
+clgroup-u->cognito: $stepnum("5")
+s31-d->components2
+apigateway1-[#EFF0F3]r-appsync: $stepnum("4")
+appsync-u->lambda2
+appsync-r->lambda3
+
+'# ストレージ管理コンポーネント
+amplify<-r->s32: $stepnum("3")
+
+'# API Gateway、SDK、Config
+apigateway2-[hidden]d-sdk
+sdk-[hidden]d-config
+apigateway2-r->lambda4
+
+'# コストコンポーネント
+lambda2-r->athena: $stepnum("9")
+athena-r->s33: $stepnum("10")
+cost-l->s33: $stepnum("11")
+cost-[hidden]r-s34
+lambda2-r->s34: $stepnum("12")
+
+'# データコンポーネント
+lambda3<-r->neptune: $stepnum("7")
+lambda3-[hidden]d-lambda4
+lambda4<-r->opensearch: $stepnum("8")
+neptune-[hidden]d-opensearch
+
+'# 検出コンポーネント
+ecs-d->fargate: $stepnum("15")
+ecs-d->ecr
+fargate-[hidden]r-ecr
+fargate-l->apigateway2: $stepnum("17")
+fargate-l->sdk: $stepnum("16")
+fargate-l->config
+
+'# イメージデプロイコンポーネント
+codepipeline-u->s35
+codepipeline-d->codebuild: $stepnum("13")
+codebuild-d->container
+container-d->ecr: $stepnum("14")
+
+@enduml

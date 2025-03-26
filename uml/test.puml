@@ -1,0 +1,13 @@
+@startuml tabletest
+actor テスター
+participant "システム" as System
+
+テスター -> System : ログイン情報入力 (正常)
+System -> テスター : ログイン成功
+
+テスター -> System : 認証情報入力 (無効)
+System -> テスター : エラーメッセージ表示
+
+テスター -> System : データ検索リクエスト
+System -> テスター : 正確な検索結果返却
+@enduml
