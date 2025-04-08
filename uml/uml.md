@@ -98,3 +98,140 @@ sequenceDiagram
     Lambda -->>- API: 登録OK
     API -->>- クライアント: 200 OK
 ```
+
+```mermaid
+stateDiagram
+    [*] --> Task1
+    Task1 --> Task2: Success
+    Task1 --> Error: Failure
+    Task2 --> [*]
+    Error --> [*]
+```
+
+# パッケージ図
+
+```mermaid
+graph LR
+    PackageA[Package A]
+    PackageB[Package B]
+    PackageC[Package C]
+    PackageD[Package D]
+
+    PackageA --> PackageB
+    PackageA --> PackageC
+    PackageB --> PackageD
+    PackageC --> PackageD
+```
+
+---
+
+### 解説
+- **パッケージ**:
+  各モジュールやサブシステムをパッケージとして表現しています（例: `Package A`, `Package B`）。
+- **依存関係**:
+  矢印でパッケージ間の依存関係を示しています。例えば、`Package A`は`Package B`と`Package C`に依存し、それらはさらに`Package D`に依存しています。
+
+このようなパッケージ図は、システム設計の際に構造を視覚的に把握するのに役立ちます。具体的なプロジェクトに応じてカスタマイズ可能ですので、さらに詳細な図が必要であれば教えてください！
+
+# アクティビティ図
+
+### 1. **ディレクトリツリー図**
+
+```mermaid
+graph LR
+    root[Project Root]
+    root --> src[Source Code]
+    src --> components[Components]
+    src --> utils[Utilities]
+    root --> public[Public Assets]
+    public --> images[Images]
+    public --> css[CSS]
+    root --> tests[Test Files]
+    root --> README[README.md]
+```
+
+```mermaid
+graph LR
+    A[env] --> B[商用環境]
+    A[env] --> C[開発環境]
+    B[商用環境] --> D[main.tf]
+    B[商用環境] --> E[variables.tf]
+    B[商用環境] --> F[output.tf]
+    B[商用環境] --> G[terraform.tfvars]
+    C[開発環境] --> H[main.tf]
+    C[開発環境] --> I[variables.tf]
+    C[開発環境] --> J[output.tf]
+    C[開発環境] --> K[terraform.tfvars]
+    L[modules] --> M[web]
+    M[web] --> N[main.tf]
+    M[web] --> O[variables.tf]
+    M[web] --> P[output.tf]
+    M[web] --> Q[terraform.tfvars]
+```
+
+---
+
+### 2. **レイヤー構造図**
+
+```mermaid
+graph LR
+    Application[Application Layer]
+    Application --> Controllers
+    Application --> Views
+    Core[Core Layer]
+    Core --> Models
+    Core --> Services
+    Core --> Repositories
+    Infrastructure[Infrastructure Layer]
+    Infrastructure --> Configurations
+    Infrastructure --> Database
+```
+
+---
+
+### 3. **ファイルの依存関係図**
+
+```mermaid
+graph LR
+    index.js --> app.js
+    app.js --> database.js
+    app.js --> routes.js
+    routes.js --> controllers.js
+    controllers.js --> services.js
+```
+
+---
+
+### 4. **状態遷移の視点で表現する場合**
+
+```mermaid
+stateDiagram
+    [*] --> InitialSetup
+    InitialSetup --> Development: Add Code
+    Development --> Testing: Write Tests
+    Testing --> Deployment: Deploy Code
+    Deployment --> [*]
+```
+
+```mermaid
+stateDiagram
+    [*] --> CLOSED
+    CLOSED -->|受信開始| LISTEN
+    CLOSED -->|終了| SYN_SENT
+    LISTEN -->|SYN受信| SYN_RECEIVED
+    LISTEN -->|送信開始| SYN_SENT
+    SYN_SENT -->|SYN/ACK受信| ESTABLISHED
+    SYN_SENT -->|ACK受信| SYN_RECEIVED
+    SYN_RECEIVED -->|RST受信| CLOSED
+    SYN_RECEIVED -->|SYN受信| SYN_SENT
+    SYN_RECEIVED -->|ACK受信| ESTABLISHED
+    ESTABLISHED -->|FIN受信| CLOSE_WAIT
+    ESTABLISHED -->|終了| FIN_WAIT1
+    FIN_WAIT1 -->|FIN受信| CLOSING
+    FIN_WAIT1 -->|ACK受信| FIN_WAIT2
+    FIN_WAIT2 -->|FIN受信| TIME_WAIT
+    CLOSE_WAIT -->|切断処理開始| LAST_ACK
+    LAST_ACK -->|ACK受信| CLOSED
+    CLOSING -->|ACK受信| TIME_WAIT
+    TIME_WAIT -->|終了| CLOSED
+```
