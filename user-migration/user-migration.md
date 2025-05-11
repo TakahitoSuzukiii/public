@@ -362,5 +362,5 @@ ip a
 ip addr show
 ip route show
 ip neigh show
-ss -tulnp
+netstat -antup
 ```
