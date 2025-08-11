@@ -306,5 +306,234 @@ aws s3 cp "D:\ops\office\result.txt" s3://my-ad-user-bucket/result.txt
 
 ---
 
-もし PowerShell スクリプト内で AWS CLI を直接使いたい場合は、以下のように `Start-Process` や `Invoke-Expression` を使って組み込むこともできます。  
-ご希望ならそのパターンも展開できますよ。どうしましょう？
+もちろん崇史さん。`Get-SSMParameter` は Systems Manager (SSM) のパラメータストアから値を取得するための便利な関数ですが、Automation ドキュメント内の `RunPowerShellScript` ステップで使う際には、代替手段を検討することで柔軟性や制御性が向上します。以下に、代替手段をいくつかの観点から詳しく紹介します。
+
+---
+
+## 🛠 代替手段一覧
+
+### 1. **AWS CLI を使う方法**
+PowerShell から直接 AWS CLI を呼び出してパラメータを取得する方法です。
+
+```powershell
+$S3BUCKET = (aws ssm get-parameter --name "/AD/S3BUCKET" --with-decryption --query "Parameter.Value" --output text)
+```
+
+#### ✅ メリット
+- `--with-decryption` により SecureString にも対応
+- IAM ロールで権限制御が可能
+
+#### ⚠ 注意点
+- AWS CLI がインストールされている必要あり
+- Automation 実行ロールに `ssm:GetParameter` 権限が必要
+
+---
+
+### 2. **AWS Tools for PowerShell を使う方法**
+PowerShell の AWS モジュールを使って直接取得する方法です。
+
+```powershell
+$S3BUCKET = (Get-SSMParameter -Name "/AD/S3BUCKET" -WithDecryption $true).Value
+```
+
+これは元のコードと同じですが、`-WithDecryption` を明示することで SecureString に対応できます。
+
+#### ✅ メリット
+- PowerShell に統一できる
+- Automation ドキュメント内でも自然に使える
+
+#### ⚠ 注意点
+- モジュールのバージョンによっては `Get-SSMParameter` が使えない場合がある
+
+---
+
+### 3. **Automation ドキュメントの `InputParameters` を使う方法**
+SSM Automation の Document にパラメータを渡す設計にすることで、PowerShell スクリプト内で直接値を使えます。
+
+#### 例: Automation Document 定義（YAML）
+
+```yaml
+parameters:
+  S3BUCKET:
+    type: String
+  S3KEYOUT:
+    type: String
+  GPN:
+    type: String
+  FILEPATH:
+    type: String
+  EXPORT:
+    type: String
+```
+
+#### PowerShell スクリプト内
+
+```powershell
+$S3BUCKET = "{{ S3BUCKET }}"
+$S3KEYOUT = "{{ S3KEYOUT }}"
+```
+
+#### ✅ メリット
+- パラメータ取得のロジックを省略できる
+- Automation の再利用性が高まる
+
+#### ⚠ 注意点
+- 呼び出し元でパラメータを渡す必要がある
+
+---
+
+### 4. **Lambda 経由で取得する方法**
+Lambda 関数を使って SSM パラメータを取得し、Automation から呼び出す方法です。
+
+#### 構成例
+- Lambda で `/AD/*` パラメータ群をまとめて取得
+- Automation から `aws:invokeLambdaFunction` ステップで呼び出す
+
+#### ✅ メリット
+- 複雑なロジックを Lambda に集約できる
+- キャッシュやバリデーションも可能
+
+#### ⚠ 注意点
+- Lambda の管理が必要
+- Automation ロールに `lambda:InvokeFunction` 権限が必要
+
+---
+
+### 5. **SSM Parameter Store の `StringList` を活用する方法**
+複数の値をまとめて 1 パラメータに格納し、分割して使う方法です。
+
+#### 例: `/AD/CONFIG` に `"bucket,keyout,gpn,filepath,export"` を格納
+
+```powershell
+$config = (Get-SSMParameter -Name "/AD/CONFIG").Value.Split(',')
+$S3BUCKET = $config[0]
+$S3KEYOUT = $config[1]
+```
+
+#### ✅ メリット
+- パラメータ数を減らせる
+- 一括取得で効率的
+
+#### ⚠ 注意点
+- 順序依存になるため注意が必要
+- 可読性が下がる可能性あり
+
+---
+
+## 🔐 セキュリティと権限の注意点
+
+- Automation 実行ロールに `ssm:GetParameter`（SecureString の場合は `ssm:GetParameters`）の権限が必要
+- パラメータ名に環境変数やタグを使うことで柔軟性を持たせることも可能
+
+---
+
+## 💡 おすすめの使い分け
+
+| シナリオ           | 推奨手段                             |
+| ------------------ | ------------------------------------ |
+| 単純な取得         | AWS CLI または PowerShell モジュール |
+| 再利用性重視       | InputParameters による外部渡し       |
+| 複雑なロジック     | Lambda 経由                          |
+| パラメータ数が多い | StringList でまとめる                |
+
+---
+
+なるほど崇史さん、SSM Parameter Store からの取得が難しい場合に、**Windows Server 2016 の環境変数に直接埋め込む方法**は、シンプルかつ確実な代替手段になります。Automation ドキュメントの `RunPowerShellScript` ステップで環境変数を参照することで、外部依存を減らし、トラブルシューティングも容易になります。
+
+---
+
+## 🧬 方法①：環境変数を事前に設定しておく
+
+### 🔧 PowerShell で環境変数を設定（管理者権限）
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("S3BUCKET", "your-bucket-name", "Machine")
+[System.Environment]::SetEnvironmentVariable("S3KEYOUT", "your-keyout-path", "Machine")
+[System.Environment]::SetEnvironmentVariable("GPN", "your-gpn-value", "Machine")
+[System.Environment]::SetEnvironmentVariable("FILEPATH", "your-file-path", "Machine")
+[System.Environment]::SetEnvironmentVariable("EXPORT", "your-export-flag", "Machine")
+```
+
+- `"Machine"` はシステム全体に設定（再起動不要で即反映）
+- `"User"` にすると現在のユーザーのみ対象
+
+### ✅ メリット
+- Automation 実行時に即参照可能
+- SSM に依存しないため、ネットワークや IAM の問題を回避できる
+
+---
+
+## 🧪 方法②：Automation スクリプト内で環境変数を参照
+
+```powershell
+$S3BUCKET = $env:S3BUCKET
+$S3KEYOUT = $env:S3KEYOUT
+$GPN      = $env:GPN
+$FILEPATH = $env:FILEPATH
+$EXPORT   = $env:EXPORT
+```
+
+- `$env:` プレフィックスで環境変数を取得
+- Automation の `RunPowerShellScript` ステップ内でそのまま使える
+
+---
+
+## 🧼 方法③：Automation 実行前に環境変数を一時的に設定
+
+Automation ドキュメントの前段で `aws:runCommand` ステップを使って、対象インスタンスに環境変数を設定することも可能です。
+
+### 例：SSM Document ステップ
+
+```yaml
+- name: SetEnvVars
+  action: aws:runCommand
+  inputs:
+    DocumentName: AWS-RunPowerShellScript
+    Parameters:
+      commands:
+        - '[System.Environment]::SetEnvironmentVariable("S3BUCKET", "your-bucket-name", "Machine")'
+```
+
+---
+
+## 🔐 セキュリティと運用上の注意点
+
+| 項目             | 内容                                                                                                       |
+| ---------------- | ---------------------------------------------------------------------------------------------------------- |
+| 🔒 セキュリティ   | 機密情報（例：パスワードやキー）は環境変数に保存しない方が安全。SecureString や AWS Secrets Manager を推奨 |
+| 🔄 永続性         | `"Machine"` に設定すれば再起動後も保持されるが、Automation 実行後に削除することも可能                      |
+| 🧹 クリーンアップ | Automation の最後に環境変数を削除することで痕跡を残さない運用も可能                                        |
+
+### 削除例：
+
+```powershell
+[System.Environment]::SetEnvironmentVariable("S3BUCKET", $null, "Machine")
+```
+
+---
+
+## 🧭 補足：環境変数の確認方法
+
+### PowerShell で一覧表示
+
+```powershell
+Get-ChildItem Env:
+```
+
+### 特定の変数だけ確認
+
+```powershell
+$env:S3BUCKET
+```
+
+---
+
+## 💡 応用アイデア
+
+- **ドメイン参加時の初期スクリプト**で環境変数を設定しておく
+- **SSM State Manager** を使って定期的に環境変数を更新
+- **タグベースの条件分岐**で異なる値を設定（例：開発環境 vs 本番）
+
+---
+
+環境変数ベースの運用は、SSM や Lambda に比べてシンプルですが、セキュリティと可視性のバランスが重要です。もし、SecureString を含む値を扱う場合は、別途暗号化や Secrets Manager の併用も検討できます。
